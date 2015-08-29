@@ -1,5 +1,200 @@
 package DBIx::FlexibleBinding;
 
+=head1 NAME
+
+DBIx::FlexibleBinding - flexible parameter binding and record fetching
+
+=head1 SYNOPSIS
+
+    # Introducing the module...
+    use DBIx::FlexibleBinding;
+    my $dbh = DBIx::FlexibleBinding->connect($dsn, $user, $pass, \%attributes);
+
+    
+    # Or, alteratively...
+    use DBI;
+    my $dbh = DBI->connect($dsn, $user, $pass, { %attributes, RootClass => 'DBIx::FlexibleBinding' }); 
+    
+    
+    # Using the "do" method...
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
+        'sponge', 'yellow', 'yummy');
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
+        [ 'sponge', 'yellow', 'yummy' ]);
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:1, :2, :3)', undef, 
+        'sponge', 'yellow', 'yummy');
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:1, :2, :3)', undef, 
+        [ 'sponge', 'yellow', 'yummy' ]);
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
+        type => 'sponge', colour => 'yellow', flavour => 'yummy');
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
+        [ type => 'sponge', colour => 'yellow', flavour => 'yummy' ]);
+    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
+        { type => 'sponge', colour => 'yellow', flavour => 'yummy' });
+    
+    
+    # Prepare using :NAME scheme...
+    my $sth = $dbh->prepare(<< 'EOF');
+    SELECT * 
+      FROM cakes 
+     WHERE type    = :type    
+       AND colour  = :colour  
+       AND flavour = :flavour
+    EOF
+    
+    
+    # Execute (any of the are valid for this named scheme)...
+    my $row_count = $sth->execute(type => 'sponge', colour => 'yellow', flavour => 'yummy');
+    my $row_count = $sth->execute([ type => 'sponge', colour => 'yellow', flavour => 'yummy' ]);
+    my $row_count = $sth->execute({ type => 'sponge', colour => 'yellow', flavour => 'yummy' });
+
+    
+    # Prepare using @NAME scheme...
+    my $sth = $dbh->prepare(<< 'EOF');
+    SELECT * 
+      FROM cakes 
+     WHERE type    = @type    
+       AND colour  = @colour  
+       AND flavour = @flavour
+    EOF
+    
+    
+    # Execute (any of the are valid for this named scheme)...
+    my $row_count = $sth->execute('@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy');
+    my $row_count = $sth->execute([ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' ]);
+    my $row_count = $sth->execute({ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' });
+
+    
+    # Prepare using :N scheme...
+    my $sth = $dbh->prepare(<< 'EOF');
+    SELECT * 
+      FROM cakes 
+     WHERE type    = :1    
+       AND colour  = :2  
+       AND flavour = :3
+    EOF
+    
+    
+    # Execute (any of the are valid for this numeric scheme)...
+    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
+    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
+
+    
+    # Prepare using ?N scheme...
+    my $sth = $dbh->prepare(<< 'EOF');
+    SELECT * 
+      FROM cakes 
+     WHERE type    = ?1    
+       AND colour  = ?2  
+       AND flavour = ?3
+    EOF
+    
+    
+    # Execute (any of the are valid for this numeric scheme)...
+    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
+    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
+
+    
+    # Prepare using ? scheme...
+    my $sth = $dbh->prepare(<< 'EOF');
+    SELECT * 
+      FROM cakes 
+     WHERE type    = ?    
+       AND colour  = ?  
+       AND flavour = ?
+    EOF
+    
+    
+    # Execute (any of the are valid for this positional scheme)...
+    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
+    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
+
+    
+    # Binding is automatic by default!
+    # 
+    # Those with a penchant for masochism may switch that nonsense 
+    # off using the C<auto_bind> method...
+    my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
+    SELECT * 
+      FROM cakes 
+     WHERE type    = :type    
+       AND colour  = :colour  
+       AND flavour = :flavour
+    EOF
+    
+    $sth->bind_param('type', 'sponge');
+    $sth->bind_param('colour', 'yellow');
+    $sth->bind_param('flavour', 'yummy');
+    $sth->execute();
+    
+    
+    # Manual binding with numeric or positional parameters...
+    my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
+    SELECT * 
+      FROM cakes 
+     WHERE type    = :1    
+       AND colour  = :2  
+       AND flavour = :3
+    EOF
+    
+    $sth->bind_param(1, 'sponge');
+    $sth->bind_param(2, 'yellow');
+    $sth->bind_param(3, 'yummy');
+    $sth->execute();
+    
+    
+    # Fetching records...
+    my @records = $sth->fetch_rows
+
+=head1 DESCRIPTION
+
+This module subclasses the DBI to provide the developer with greater 
+flexibility in their choice of parameter placeholder schemes. In addition
+to the standard positional C<?> placeholders, this module supports other
+popular schemes:
+
+=over 2
+
+=item * :N (numeric, e.g. C<:1>)
+
+=item * ?N (numeric, e.g. C<?1>)
+
+=item * :NAME (named, e.g. C<:foo>)
+
+=item * @NAME (named, e.g. C<@foo>)
+
+=back
+
+The module places little if any addtional cognitive burden upon developers
+who continue to use C<prepare>, C<do>, C<execute> methods as they would 
+normally.
+
+The module's standard behaviour is to render unnecessary the manual binding
+of parameters because, for any scheme other than positional C<?> placeholders,
+that binding is done automatically. And it isn't usually necessary to manually
+bind parameters when using postional placeholders.
+
+When presenting parameter bindings to the C<do> and C<execute> methods, just 
+remember to lay them out sensibly:
+
+=over 2
+
+=item Positional or numeric schemes
+
+Parameter bindings may be presented as a simple list of parameters, as a
+single reference to a list, or as a single anonymous array reference.
+
+=item Name-based schemes
+
+Parameter bindings may be presented as a simple list of key-value pairs, as
+a single reference to a list of key-value pairs, as a single anonymous array 
+reference containing key-value pairs, or as a single anonymous hash 
+reference.
+
+=back
+
+=cut
+
 use 5.006;
 use strict;
 use warnings;
@@ -7,10 +202,10 @@ use MRO::Compat 'c3';
 
 use DBI ();
 use namespace::clean;
-our $VERSION                       = '0.000001';
-our @ISA                           = 'DBI';
-our $DEFAULT_DBI_FETCH_METHOD      = 'fetchrow_arrayref';
-our @DEFAULT_DBI_FETCH_METHOD_ARGS = ();
+our $VERSION                 = '0.000001';
+our @ISA                     = 'DBI';
+our $DEFAULT_FETCHROW_METHOD = 'fetchrow_arrayref';
+our @DEFAULT_FETCHROW_ARGS   = ();
 
 sub _dbix_set_err
 {
@@ -77,7 +272,7 @@ sub do
     return $sth->execute(@bind_values);
 }
 
-sub execute_and_fetch_records
+sub execute_then_fetch_rows
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
 
@@ -100,10 +295,10 @@ sub execute_and_fetch_records
 
     return unless $rows > 0;
 
-    return $sth->fetch_records(@$callbacks);
+    return $sth->fetch_rows(@$callbacks);
 }
 
-sub execute_and_fetch_record
+sub execute_then_fetch_record
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
 
@@ -134,9 +329,8 @@ package    # Hide from PAUSE
 
 BEGIN
 {
-    *_dbix_set_err                 = \&DBIx::FlexibleBinding::_dbix_set_err;
-    *DEFAULT_DBI_FETCH_METHOD      = \$DBIx::FlexibleBinding::DEFAULT_DBI_FETCH_METHOD;
-    *DEFAULT_DBI_FETCH_METHOD_ARGS = \@DBIx::FlexibleBinding::DEFAULT_DBI_FETCH_METHOD_ARGS;
+    *_dbix_set_err           = \&DBIx::FlexibleBinding::_dbix_set_err;
+    *DEFAULT_FETCHROW_METHOD = \$DBIx::FlexibleBinding::DEFAULT_FETCHROW_METHOD;
 }
 
 use Params::Callbacks qw(callbacks);
@@ -275,30 +469,52 @@ sub execute
     return ( $rows == 0 ) ? '0E0' : $rows;
 }
 
-sub fetch_records
+sub fetch_next_row
 {
-    my ( $callbacks, $sth ) = &callbacks;
-    my @result;
+    my ( $callbacks, $sth, @args ) = &callbacks;
+    my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args);
     local $_;
-    while ( my $row = $sth->$DEFAULT_DBI_FETCH_METHOD(@DEFAULT_DBI_FETCH_METHOD_ARGS) )
+    if ($row)
     {
-        push @result, $callbacks->transform( $_ = $row );
+        $row = $callbacks->smart_transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
     }
-    return wantarray ? @result : \@result;
+    return $row;
 }
 
-sub fetch_record
+sub fetch_only_row
 {
-    my ( $callbacks, $sth ) = &callbacks;
-    my $fetch = my @result;
-    my $row   = $sth->$sth->$DEFAULT_DBI_FETCH_METHOD(@DEFAULT_DBI_FETCH_METHOD_ARGS);
-    $sth->finish();
+    my ( $callbacks, $sth, @args ) = &callbacks;
+    my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args);
     local $_;
-    push @result, $callbacks->transform( $_ = $row ) if $row;
-    return $result[0];
+    if ($row)
+    {
+        $row = $callbacks->smart_transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
+    }
+    $sth->finish();
+    return $row;
 }
 
-sub execute_and_fetch_records
+sub fetch_rows
+{
+    my ( $callbacks, $sth, @args ) = &callbacks;
+    my @rows;
+    local $_;
+    while ( my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args) )
+    {
+        push @rows, $callbacks->transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
+    }
+    return wantarray ? @rows : \@rows;
+}
+
+sub fetch_all
+{
+    my ( $callbacks, $sth, @args ) = &callbacks;
+    local $_;
+    my @rows = map { $callbacks->transform($_) } @{ $sth->fetchall_arrayref(@args) };
+    return wantarray ? @rows : \@rows;
+}
+
+sub execute_then_fetch_rows
 {
     my ( $callbacks, $sth, @bind_values ) = &callbacks;
 
@@ -315,10 +531,10 @@ sub execute_and_fetch_records
 
     return unless $rows > 0;
 
-    return $sth->fetch_records(@$callbacks);
+    return $sth->fetch_rows(@$callbacks);
 }
 
-sub execute_and_fetch_record
+sub execute_then_fetch_record
 {
     my ( $callbacks, $sth, @bind_values ) = &callbacks;
 
@@ -342,182 +558,6 @@ sub execute_and_fetch_record
 
 __END__
 
-=head1 NAME
-
-DBIx::FlexibleBinding - flexible parameter binding and record fetching
-
-=head1 SYNOPSIS
-
-    # Introducing the module...
-    use DBIx::FlexibleBinding;
-    my $dbh = DBIx::FlexibleBinding->connect($dsn, $user, $pass, \%attributes);
-
-    # Or, alteratively...
-    use DBI;
-    my $dbh = DBI->connect($dsn, $user, $pass, { %attributes, RootClass => 'DBIx::FlexibleBinding' }); 
-    
-    # Prepare using :NAME scheme...
-    my $sth = $dbh->prepare(<< 'EOF');
-    SELECT * 
-      FROM cakes 
-     WHERE type    = :type    
-       AND colour  = :colour  
-       AND flavour = :flavour
-    EOF
-    
-    # Execute (any of the are valid for this named scheme)...
-    my $row_count = $sth->execute(type => 'sponge', colour => 'yellow', flavour => 'yummy');
-    my $row_count = $sth->execute([ type => 'sponge', colour => 'yellow', flavour => 'yummy' ]);
-    my $row_count = $sth->execute({ type => 'sponge', colour => 'yellow', flavour => 'yummy' });
-
-    # Prepare using @NAME scheme...
-    my $sth = $dbh->prepare(<< 'EOF');
-    SELECT * 
-      FROM cakes 
-     WHERE type    = @type    
-       AND colour  = @colour  
-       AND flavour = @flavour
-    EOF
-    
-    # Execute (any of the are valid for this named scheme)...
-    my $row_count = $sth->execute('@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy');
-    my $row_count = $sth->execute([ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' ]);
-    my $row_count = $sth->execute({ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' });
-
-    # Prepare using :N scheme...
-    my $sth = $dbh->prepare(<< 'EOF');
-    SELECT * 
-      FROM cakes 
-     WHERE type    = :1    
-       AND colour  = :2  
-       AND flavour = :3
-    EOF
-    
-    # Execute (any of the are valid for this numeric scheme)...
-    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
-    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
-
-    # Prepare using ?N scheme...
-    my $sth = $dbh->prepare(<< 'EOF');
-    SELECT * 
-      FROM cakes 
-     WHERE type    = ?1    
-       AND colour  = ?2  
-       AND flavour = ?3
-    EOF
-    
-    # Execute (any of the are valid for this numeric scheme)...
-    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
-    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
-
-    # Prepare using ? scheme...
-    my $sth = $dbh->prepare(<< 'EOF');
-    SELECT * 
-      FROM cakes 
-     WHERE type    = ?    
-       AND colour  = ?  
-       AND flavour = ?
-    EOF
-    
-    # Execute (any of the are valid for this positional scheme)...
-    my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
-    my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
-
-    # Binding is automatic by default to promote the Perl virtue 
-    # of laziness!
-    # 
-    # Those with a penchant for masochism may switch that nonsense 
-    # off using the C<auto_bind> method...
-    my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
-    SELECT * 
-      FROM cakes 
-     WHERE type    = :type    
-       AND colour  = :colour  
-       AND flavour = :flavour
-    EOF
-    
-    $sth->bind_param('type', 'sponge');
-    $sth->bind_param('colour', 'yellow');
-    $sth->bind_param('flavour', 'yummy');
-    $sth->execute();
-    
-    # Manual binding with numeric or positional parameters...
-    my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
-    SELECT * 
-      FROM cakes 
-     WHERE type    = :1    
-       AND colour  = :2  
-       AND flavour = :3
-    EOF
-    
-    $sth->bind_param(1, 'sponge');
-    $sth->bind_param(2, 'yellow');
-    $sth->bind_param(3, 'yummy');
-    $sth->execute();
-
-    # Using the "do" method...
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
-        'sponge', 'yellow', 'yummy');
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
-        [ 'sponge', 'yellow', 'yummy' ]);
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:1, :2, :3)', undef, 
-        'sponge', 'yellow', 'yummy');
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:1, :2, :3)', undef, 
-        [ 'sponge', 'yellow', 'yummy' ]);
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
-        type => 'sponge', colour => 'yellow', flavour => 'yummy');
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
-        [ type => 'sponge', colour => 'yellow', flavour => 'yummy' ]);
-    $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (:type, :colour, :flavour)', undef, 
-        { type => 'sponge', colour => 'yellow', flavour => 'yummy' });
-    
-=head1 DESCRIPTION
-
-This module subclasses the DBI to provide the developer with greater 
-flexibility in their choice of parameter placeholder schemes. In addition
-to the standard positional C<?> placeholders, this module supports other
-popular schemes:
-
-=over 2
-
-=item * :N (numeric, e.g. C<:1>)
-
-=item * ?N (numeric, e.g. C<?1>)
-
-=item * :NAME (named, e.g. C<:foo>)
-
-=item * @NAME (named, e.g. C<@foo>)
-
-=back
-
-The module places little if any addtional cognitive burden upon developers
-who continue to use C<prepare>, C<do>, C<execute> methods as they would 
-normally.
-
-The module's standard behaviour is to render unnecessary the manual binding
-of parameters because, for any scheme other than positional C<?> placeholders,
-that binding is done automatically. And it isn't usually necessary to manually
-bind parameters when using postional placeholders.
-
-When presenting parameter bindings to the C<do> and C<execute> methods, just 
-remember to lay them out sensibly:
-
-=over 2
-
-=item Positional or numeric schemes
-
-Parameter bindings may be presented as a simple list of parameters, as a
-single reference to a list, or as a single anonymous array reference.
-
-=item Name-based schemes
-
-Parameter bindings may be presented as a simple list of key-value pairs, as
-a single reference to a list of key-value pairs, as a single anonymous array 
-reference containing key-value pairs, or as a single anonymous hash 
-reference.
-
-=back
- 
 =head1 METHODS
 
 =head2 function1
