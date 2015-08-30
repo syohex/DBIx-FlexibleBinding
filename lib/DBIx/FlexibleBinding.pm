@@ -295,7 +295,11 @@ sub processrow_arrayref
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
     unless ( ref($sth) )
     {
-        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        my $attr;
+        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
+        {
+            $attr = shift(@bind_values);
+        }
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -324,7 +328,11 @@ sub processrow_hashref
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
     unless ( ref($sth) )
     {
-        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        my $attr;
+        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
+        {
+            $attr = shift(@bind_values);
+        }
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -353,7 +361,11 @@ sub processall_arrayref
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
     unless ( ref($sth) )
     {
-        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        my $attr;
+        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
+        {
+            $attr = shift(@bind_values);
+        }
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -384,7 +396,11 @@ sub processall_hashref
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
     unless ( ref($sth) )
     {
-        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        my $attr;
+        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
+        {
+            $attr = shift(@bind_values);
+        }
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
