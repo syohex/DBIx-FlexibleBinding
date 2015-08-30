@@ -374,7 +374,9 @@ sub processall_arrayref
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
-    return $result;
+    return $result
+      unless defined $result;
+    return wantarray ? @$result : $result;
 }
 
 sub processall_hashref
@@ -403,10 +405,12 @@ sub processall_hashref
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
-    return $result;
+    return $result
+      unless defined $result;
+    return wantarray ? @$result : $result;
 }
 
-package                    # Hide from PAUSE
+package    # Hide from PAUSE
   DBIx::FlexibleBinding::st;
 
 BEGIN
@@ -587,7 +591,9 @@ sub processall_arrayref
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
-    return $result;
+    return $result
+      unless defined $result;
+    return wantarray ? @$result : $result;
 }
 
 sub processall_hashref
@@ -600,7 +606,9 @@ sub processall_hashref
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
-    return $result;
+    return $result
+      unless defined $result;
+    return wantarray ? @$result : $result;
 }
 
 1;

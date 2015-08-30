@@ -92,7 +92,6 @@ EOF
     {
       SKIP:
         {
-            my @test_data = @{$test_data};
             my ( $rv, $create_copy, $dbh, $dsn, @user, $attr ) =
               ( undef, undef, undef, undef, (), { RaiseError => 1 } );
 
@@ -123,186 +122,187 @@ EOF
             # Yay, we got a connection!
             is( ref($dbh), 'DBIx::FlexibleBinding::db', "Testing DBD\::$driver ($dsn)" );
 
-            #            # Drop the "mapsolarsystems" table
-            #            $rv = $dbh->do('DROP TABLE IF EXISTS mapsolarsystems');
-            #            if ( $driver eq 'CSV' )
-            #            {
-            #                is( $rv, -1, "drop" );    # Table drop won't do anything useful, delete the table's CSV file manually
-            #                unlink './mapsolarsystems';
-            #            }
-            #            else
-            #            {
-            #                is( $rv, '0E0', "drop" );    # Table was dropped
-            #            }
-            #
-            #            # Recreate the "mapsolarsystems" table using a create statement sanitised for the driver
-            #            $rv = $dbh->do($create_copy);
-            #            is( $rv, '0E0', "create" );      # Table was created
-            #
-            #            # Populate the "mapsolarsystems" table
-            #            my $count = 0;
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 881 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($positional_placeholders)", undef, @$row );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 881, "insert ? ( VALUES )" );    # do/INSERTs successful using positionals and list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 1362 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, @$row );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 1362, "insert :NUMBER ( VALUES )" );    # do/INSERTs successful using :N and list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 1762 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, $row );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 1762, "insert :NUMBER [ VALUES ]" );    # do/INSERTs successful using :N and anonymous list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 2243 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, @$row );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 2243, "insert ?NUMBER ( VALUES )" );    # do/INSERTs successful using ?N and list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 2643 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, $row );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 2643, "insert ?NUMBER [ VALUES ]" );    # do/INSERTs successful using ?N and anonymous list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 3524 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, @data );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 3524, "insert :NAME ( KEY-VALUE PAIRS )" );    # do/INSERTs successful using :NAME with list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 4405 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, [@data] );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 4405, "insert :NAME [ KEY-VALUE PAIRS ]" );    # do/INSERTs successful using :NAME with anonymous list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 5286 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, {@data} );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 5286, "insert :NAME { KEY-VALUE PAIRS }" );    # do/INSERTs successful using :NAME with anonymous hash
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 6167 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, @data );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 6167, "insert \@NAME ( KEY-VALUE PAIRS )" );    # do/INSERTs successful using @NAME with anonymous list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 7048 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, [@data] );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 7048, "insert \@NAME [ KEY-VALUE PAIRS ]" );    # do/INSERTs successful using @NAME with anonymous list
-            #
-            #            while (@test_data)
-            #            {
-            #                $count++;
-            #                if ( $count > 7929 )
-            #                {
-            #                    $count -= 1;
-            #                    last;
-            #                }
-            #                my $row = shift(@test_data);
-            #                my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
-            #                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, {@data} );
-            #                last unless $rv == 1;
-            #            }
-            #            is( $count, 7929, "insert \@NAME { KEY-VALUE PAIRS }" );    # do/INSERTs successful using @NAME with anonymous hash
-            #
-            #            # Prepare, execute, fetch cycle...
-            $DBIx::FlexibleBinding::DEFAULT_AUTO_BIND = 0;    # Disable auto binding globabally to keep things as standard as possible
+            unless ( $ENV{TEST_NO_RELOAD} )
+            {
+                # Drop the "mapsolarsystems" table
+                $rv = $dbh->do('DROP TABLE IF EXISTS mapsolarsystems');
+                if ( $driver eq 'CSV' )
+                {
+                    is( $rv, -1, "drop" );    # Table drop won't do anything useful, delete the table's CSV file manually
+                    unlink './mapsolarsystems';
+                }
+                else
+                {
+                    is( $rv, '0E0', "drop" );    # Table was dropped
+                }
+
+                # Recreate the "mapsolarsystems" table using a create statement sanitised for the driver
+                $rv = $dbh->do($create_copy);
+                is( $rv, '0E0', "create" );      # Table was created
+
+                # Populate the "mapsolarsystems" table
+                my $count     = 0;
+                my @test_data = @{$test_data};
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 881 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($positional_placeholders)", undef, @$row );
+                    last unless $rv == 1;
+                }
+                is( $count, 881, "insert ? ( VALUES )" );    # do/INSERTs successful using positionals and list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 1362 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, @$row );
+                    last unless $rv == 1;
+                }
+                is( $count, 1362, "insert :NUMBER ( VALUES )" );    # do/INSERTs successful using :N and list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 1762 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, $row );
+                    last unless $rv == 1;
+                }
+                is( $count, 1762, "insert :NUMBER [ VALUES ]" );    # do/INSERTs successful using :N and anonymous list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 2243 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, @$row );
+                    last unless $rv == 1;
+                }
+                is( $count, 2243, "insert ?NUMBER ( VALUES )" );    # do/INSERTs successful using ?N and list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 2643 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, $row );
+                    last unless $rv == 1;
+                }
+                is( $count, 2643, "insert ?NUMBER [ VALUES ]" );    # do/INSERTs successful using ?N and anonymous list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 3524 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, @data );
+                    last unless $rv == 1;
+                }
+                is( $count, 3524, "insert :NAME ( KEY-VALUE PAIRS )" );    # do/INSERTs successful using :NAME with list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 4405 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, [@data] );
+                    last unless $rv == 1;
+                }
+                is( $count, 4405, "insert :NAME [ KEY-VALUE PAIRS ]" );    # do/INSERTs successful using :NAME with anonymous list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 5286 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, {@data} );
+                    last unless $rv == 1;
+                }
+                is( $count, 5286, "insert :NAME { KEY-VALUE PAIRS }" );    # do/INSERTs successful using :NAME with anonymous hash
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 6167 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, @data );
+                    last unless $rv == 1;
+                }
+                is( $count, 6167, "insert \@NAME ( KEY-VALUE PAIRS )" );    # do/INSERTs successful using @NAME with anonymous list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 7048 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, [@data] );
+                    last unless $rv == 1;
+                }
+                is( $count, 7048, "insert \@NAME [ KEY-VALUE PAIRS ]" );    # do/INSERTs successful using @NAME with anonymous list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 7929 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    my @data = map { '@' . $_ => $row->[ $columns{$_} ] } @headings;
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, {@data} );
+                    last unless $rv == 1;
+                }
+                is( $count, 7929, "insert \@NAME { KEY-VALUE PAIRS }" );    # do/INSERTs successful using @NAME with anonymous hash
+            }
 
             # First, some really basic checks...
             my $sql = 'SELECT COUNT(*) AS count FROM mapsolarsystems';
@@ -343,6 +343,34 @@ EOF
             }
 
             {
+                my $sth = $dbh->prepare($sql);
+                $sth->execute();
+                my $result = $sth->processrow_arrayref( callback { $_->[0] } );
+                is( $result, 7929, 'prepare, execute, processrow_arrayref (sth)' );
+            }
+
+            {
+                my $sth = $dbh->prepare($sql);
+                $sth->execute();
+                my $result = $sth->processrow_hashref( callback { $_->{count} } );
+                is( $result, 7929, 'prepare, execute, processrow_hashref (sth)' );
+            }
+
+            {
+                my $sth = $dbh->prepare($sql);
+                $sth->execute();
+                my $result = $sth->processall_arrayref( callback { $_->[0] } );
+                is_deeply( $result, [7929], 'prepare, execute, processall_arrayref (sth)' );
+            }
+
+            {
+                my $sth = $dbh->prepare($sql);
+                $sth->execute();
+                my $result = $sth->processall_hashref( callback { $_->{count} } );
+                is_deeply( $result, [7929], 'prepare, execute, fetchall_hashref (sth)' );
+            }
+
+            {
                 my @result = $dbh->selectrow_array($sql);
                 is( $result[0], 7929, 'selectrow_array' );
             }
@@ -363,40 +391,34 @@ EOF
             }
 
             {
-                my $result = $dbh->selectall_arrayref($sql, { Slice => {} });
+                my $result = $dbh->selectall_arrayref( $sql, { Slice => {} } );
                 is_deeply( $result, [ { count => '7929' } ], 'selectall_arrayref({Slice => {}})' );
             }
 
-            $dbh->disconnect();
+            {
+                my $result = $dbh->processrow_arrayref( $sql, callback { $_->[0] } );
+                is( $result, 7929, 'processrow_arrayref (dbh)' );
+            }
 
-            #            if ( $driver eq 'CSV' )
-            #            {
-            #                unlink './mapsolarsystems';
-            #            }
-            #            elsif ( $driver eq 'SQLite' )
-            #            {
-            #                unlink './test.db';
-            #            }
-            #            else
-            #            {
-            #                # Nothing to clean up
-            #            }
+            {
+                my $result = $dbh->processrow_hashref( $sql, callback { $_->{count} } );
+                is( $result, 7929, 'processrow_hashref (dbh)' );
+            }
+
+            {
+                my $result = $dbh->processall_arrayref( $sql, callback { $_->[0] } );
+                is_deeply( $result, [7929], 'processall_arrayref (dbh)' );
+            }
+
+            {
+                my $result = $dbh->processall_hashref( $sql, callback { $_->{count} } );
+                is_deeply( $result, [7929], 'processall_hashref (dbh)' );
+            }
+
+            # Now some slightly funkier tests
+            $dbh->disconnect();
         }
     }
 }
 
 done_testing();
-
-#my $dbh = DBIx::FlexibleBinding->connect( 'dbi:SQLite:dbname=test.db', '', '', { RaiseError => 1 } );
-#$dbh->disconnect();
-#{
-#    my $dbh = DBIx::FlexibleBinding->connect( 'dbi:mysql:test;hostname=127.0.0.1', 'test', 'test', { RaiseError => 1 } )
-#      or die $DBI::errstr;
-#    #$DBIx::FlexibleBinding::DEFAULT_DBI_FETCH_METHOD = 'fetchrow_hashref';
-#    my $sth = $dbh->prepare('SELECT * FROM mapsolarsystems WHERE security >= 1 AND regional = 1');
-#    $sth->execute();
-#    my $results = $sth->fetch_all();
-#    print Dump( $results );
-#
-#    $dbh->disconnect();
-#}
