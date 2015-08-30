@@ -151,7 +151,21 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($positional_placeholders)", undef, @$row );
                 last unless $rv == 1;
             }
-            is( $count, 881 );    # 500 rows successfully inserted using positionals and list
+            is( $count, 881 );    # do/INSERTs successful using positionals and list
+
+            while (@test_data)
+            {
+                $count++;
+                if ( $count > 1362 )
+                {
+                    $count -= 1;
+                    last;
+                }
+                my $row = shift(@test_data);
+                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, @$row );
+                last unless $rv == 1;
+            }
+            is( $count, 1362 );    # do/INSERTs successful using :N and list
 
             while (@test_data)
             {
@@ -162,10 +176,24 @@ EOF
                     last;
                 }
                 my $row = shift(@test_data);
-                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, @$row );
+                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n1_placeholders)", undef, $row );
                 last unless $rv == 1;
             }
-            is( $count, 1762 );    # 500 rows successfully inserted using :N
+            is( $count, 1762 );    # do/INSERTs successful using :N and anonymous list
+
+            while (@test_data)
+            {
+                $count++;
+                if ( $count > 2243 )
+                {
+                    $count -= 1;
+                    last;
+                }
+                my $row = shift(@test_data);
+                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, @$row );
+                last unless $rv == 1;
+            }
+            is( $count, 2243 );    # do/INSERTs successful using ?N and list
 
             while (@test_data)
             {
@@ -176,10 +204,10 @@ EOF
                     last;
                 }
                 my $row = shift(@test_data);
-                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, @$row );
+                $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($n2_placeholders)", undef, $row );
                 last unless $rv == 1;
             }
-            is( $count, 2643 );    # 500 rows successfully inserted using ?N
+            is( $count, 2643 );    # do/INSERTs successful using ?N and anonymous list
 
             while (@test_data)
             {
@@ -194,7 +222,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, @data );
                 last unless $rv == 1;
             }
-            is( $count, 3524 );    # 500 rows successfully inserted using :NAME with list
+            is( $count, 3524 );    # do/INSERTs successful using :NAME with list
 
             while (@test_data)
             {
@@ -209,7 +237,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, [@data] );
                 last unless $rv == 1;
             }
-            is( $count, 4405 );    # 500 rows successfully inserted using :NAME with anonymous list
+            is( $count, 4405 );    # do/INSERTs successful using :NAME with anonymous list
 
             while (@test_data)
             {
@@ -224,7 +252,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name1_placeholders)", undef, @data );
                 last unless $rv == 1;
             }
-            is( $count, 5286 );    # 500 rows successfully inserted using @NAME with list
+            is( $count, 5286 );    # do/INSERTs successful using @NAME with list
 
             while (@test_data)
             {
@@ -239,7 +267,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, [@data] );
                 last unless $rv == 1;
             }
-            is( $count, 6167 );    # 500 rows successfully inserted using @NAME with anonymous list
+            is( $count, 6167 );    # do/INSERTs successful using @NAME with anonymous list
 
             while (@test_data)
             {
@@ -254,7 +282,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, {@data} );
                 last unless $rv == 1;
             }
-            is( $count, 7048 );    # 500 rows successfully inserted using @NAME with anonymous hash
+            is( $count, 7048 );    # do/INSERTs successful using @NAME with anonymous hash
 
             while (@test_data)
             {
@@ -269,7 +297,7 @@ EOF
                 $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($name2_placeholders)", undef, {@data} );
                 last unless $rv == 1;
             }
-            is( $count, 7929 );    # 500 rows successfully inserted using :NAME with anonymous hash
+            is( $count, 7929 );    # do/INSERTs successful using :NAME with anonymous hash
 
             $dbh->disconnect();
 
