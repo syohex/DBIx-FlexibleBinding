@@ -283,7 +283,7 @@ use DBI      ();
 use namespace::clean;
 use Params::Callbacks 'callback';
 
-our $VERSION           = '0.001001';
+our $VERSION           = '0.001002';
 our @ISA               = ( 'DBI', 'Exporter' );
 our %EXPORT_TAGS       = ( all => [qw(callback)] );
 our @EXPORT_OK         = @{ $EXPORT_TAGS{all} };
