@@ -1,5 +1,35 @@
 DBIx-FlexibleBinding
 
+A DBI subclass that implements the following features:
+
+    Support for multiple parameter placeholder schemes
+        * Standard positional placeholders (?)
+        * Numeric placeholders (:1 and ?1)
+        * Named placeholders (:NAME and @NAME)
+    
+    Flexible argument list binding mechanisms
+        * (list of values) and [list of values] for positional.
+          placeholders.
+        * (list of values) and [list of values] for numeric placeholders.
+        * (list of key-value pairs), [list of key-value pairs] and 
+          {list of key-value pairs} for named placeholders.
+        
+    Automatic binding dependant on disposition of placeholders
+    
+    Additional statement methods supporting fetching and processing 
+    using callbacks
+        * $sth->processrow_arrayref(CALLBACKS)
+        * $sth->processrow_hashref(CALLBACKS)
+        * $sth->processall_arrayref(CALLBACKS)
+        * $sth->processall_hashref(CALLBACKS)
+        
+    Additional database methods supporting preparation, execution, fetching 
+    and processing using callbacks
+        * $dbh->processrow_arrayref(STATEMENT, ATTRS, BINDINGS, CALLBACKS)
+        * $dbh->processrow_hashref(STATEMENT, ATTRS, BINDINGS, CALLBACKS)
+        * $dbh->processall_arrayref(STATEMENT, ATTRS, BINDINGS, CALLBACKS)
+        * $dbh->processall_hashref(STATEMENT, ATTRS, BINDINGS, CALLBACKS)
+        
 INSTALLATION
 
 To install this module, run the following commands:
