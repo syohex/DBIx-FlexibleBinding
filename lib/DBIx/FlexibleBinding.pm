@@ -7,16 +7,19 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
 =head1 SYNOPSIS
 
     # Introducing the module...
+    # 
     use DBIx::FlexibleBinding;
     my $dbh = DBIx::FlexibleBinding->connect($dsn, $user, $pass, \%attributes);
 
     
     # Or, alteratively...
+    # 
     use DBI;
     my $dbh = DBI->connect($dsn, $user, $pass, { %attributes, RootClass => 'DBIx::FlexibleBinding' }); 
     
     
     # Using the "do" method...
+    # 
     $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
         'sponge', 'yellow', 'yummy');
     $dbh->do('INSERT INTO cakes (type, colour, flavour) VALUES (?, ?, ?)', undef, 
@@ -34,6 +37,7 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Prepare using :NAME scheme...
+    # 
     my $sth = $dbh->prepare(<< 'EOF');
     SELECT * 
       FROM cakes 
@@ -44,12 +48,14 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Execute (any of the are valid for this named scheme)...
+    # 
     my $row_count = $sth->execute(type => 'sponge', colour => 'yellow', flavour => 'yummy');
     my $row_count = $sth->execute([ type => 'sponge', colour => 'yellow', flavour => 'yummy' ]);
     my $row_count = $sth->execute({ type => 'sponge', colour => 'yellow', flavour => 'yummy' });
 
     
     # Prepare using @NAME scheme...
+    # 
     my $sth = $dbh->prepare(<< 'EOF');
     SELECT * 
       FROM cakes 
@@ -60,12 +66,14 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Execute (any of the are valid for this named scheme)...
+    # 
     my $row_count = $sth->execute('@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy');
     my $row_count = $sth->execute([ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' ]);
     my $row_count = $sth->execute({ '@type' => 'sponge', '@colour' => 'yellow', '@flavour' => 'yummy' });
 
     
     # Prepare using :N scheme...
+    # 
     my $sth = $dbh->prepare(<< 'EOF');
     SELECT * 
       FROM cakes 
@@ -76,11 +84,13 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Execute (any of the are valid for this numeric scheme)...
+    # 
     my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
     my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
 
     
     # Prepare using ?N scheme...
+    # 
     my $sth = $dbh->prepare(<< 'EOF');
     SELECT * 
       FROM cakes 
@@ -91,11 +101,13 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Execute (any of the are valid for this numeric scheme)...
+    # 
     my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
     my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
 
     
     # Prepare using ? scheme...
+    # 
     my $sth = $dbh->prepare(<< 'EOF');
     SELECT * 
       FROM cakes 
@@ -106,14 +118,17 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Execute (any of the are valid for this positional scheme)...
+    # 
     my $row_count = $sth->execute('sponge', 'yellow', 'yummy');
     my $row_count = $sth->execute([ 'sponge', 'yellow', 'yummy' ]);
 
     
-    # Binding is automatic by default!
+    # Data binding is automatic by default.
     # 
-    # Those with a penchant for masochism may switch that nonsense 
-    # off using the C<auto_bind> method...
+    # Those with a penchant for masochism may switch automatic binding 
+    # off completely using the C<auto_bind> method, or by changing the
+    # value of DBIx::FlexibleBinding::DEFAULT_AUTO_BIND to 0.
+    # 
     my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
     SELECT * 
       FROM cakes 
@@ -129,6 +144,7 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Manual binding with numeric or positional parameters...
+    #
     my $sth = $dbh->prepare(<< 'EOF')->auto_bind(0);
     SELECT * 
       FROM cakes 
@@ -144,6 +160,7 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     
     
     # Fetching records...
+    #
     my @records = $sth->fetch_rows
 
 =head1 DESCRIPTION
@@ -204,6 +221,7 @@ use DBI ();
 use namespace::clean;
 our $VERSION                 = '0.000001';
 our @ISA                     = 'DBI';
+our $DEFAULT_AUTO_BIND       = 1;
 our $DEFAULT_FETCHROW_METHOD = 'fetchrow_arrayref';
 our @DEFAULT_FETCHROW_ARGS   = ();
 
@@ -255,7 +273,7 @@ sub prepare
 
     if (@params)
     {
-        $sth->{private_auto_binding}              = 1;
+        $sth->{private_auto_binding}              = $DBIx::FlexibleBinding::DEFAULT_AUTO_BIND;
         $sth->{private_numeric_placeholders_only} = ( any { /\D/ } @params ) ? 0 : 1;
         $sth->{private_param_counts}              = { map { $_ => 0 } @params };
         $sth->{private_param_order}               = \@params;

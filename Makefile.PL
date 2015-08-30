@@ -12,29 +12,30 @@ WriteMakefile(
     PL_FILES           => {},
     MIN_PERL_VERSION   => 5.006,
     CONFIGURE_REQUIRES => {
-        'ExtUtils::MakeMaker' => 0,
+                            'ExtUtils::MakeMaker' => 0,
     },
     BUILD_REQUIRES => {
-        'Test::More'  => 0,
-        'DBI'         => 0,
-        'DBD::SQLite' => 0,
+                        'Test::More'  => 0,
+                        'DBI'         => 0,
+                        'DBD::SQLite' => 0,
+                        'JSON::Syck'  => 0,
     },
     PREREQ_PM => {
-        'DBI'              => 0,
-        'List::MoreUtils'  => 0,
-        'MRO::Compat'      => 0,
-        'Scalar::Util'     => 0,
-        'namespace::clean' => 0,
+                   'DBI'              => 0,
+                   'List::MoreUtils'  => 0,
+                   'MRO::Compat'      => 0,
+                   'Scalar::Util'     => 0,
+                   'namespace::clean' => 0,
     },
     META_MERGE => {
-        'meta-spec' => { version => 2 },
-        resources   => {
-            repository => {
-                type => 'git',
-                url  => 'https://github.com/cpanic/Params-Callbacks.git',
-                web  => 'https://github.com/cpanic/Params-Callbacks',
-            },
-        },
+                    'meta-spec' => { version => 2 },
+                    resources   => {
+                                   repository => {
+                                                   type => 'git',
+                                                   url  => 'https://github.com/cpanic/Params-Callbacks.git',
+                                                   web  => 'https://github.com/cpanic/Params-Callbacks',
+                                   },
+                    },
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'DBIx-FlexibleBinding-*' },
