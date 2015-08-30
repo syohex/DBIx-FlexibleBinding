@@ -159,10 +159,72 @@ DBIx::FlexibleBinding - flexible parameter binding and record fetching
     $sth->execute();
     
     
-    # Fetching records...
+    # Fetching and processing a single row (arrayref)
     #
-    my @records = $sth->fetch_rows
-
+    my $sth = $dbh->prepare('SELECT COUNT(*) AS count FROM cakes');
+    $sth->execute();
+    
+    my $arrayref = $sth->processrow_arrayref()          # extra, unnecessary state
+    my $count = $arrayref->[0];                         # the value we actually wanted
+    
+    # Or ...
+    #
+    my $count = $sth->processrow_arrayref(callback {    # single piece of state and the value we wanted
+        return $_->[0];                                 # use $_  and $_[0] to reference the row in a callback
+    });                                                 # callback not called for emty result set
+    
+    
+    # Fetching and processing a single row (hashref)
+    #
+    my $sth = $dbh->prepare('SELECT COUNT(*) AS count FROM cakes');
+    $sth->execute();
+    
+    my $hashref = $sth->processrow_hashref()            # extra, unnecessary state
+    my $count = $hashref->{count};                      # the value we actually wanted
+    
+    # Or ...
+    #
+    my $count = $sth->processrow_hashref(callback {     # single piece of state and the value we wanted
+        return $_[0]{count};                            # use $_  and $_[0] to reference the row in a callback
+    });                                                 # callback not called for emty result set
+    
+    
+    # Another way to fetch and process a single row (arrayref)
+    #
+    my $arrayref = $dbh->processrow_arrayref('SELECT COUNT(*) AS count FROM cakes');
+    my $count = $arrayref->[0];
+    
+    # Or ...
+    #
+    my $count = $dbh->processrow_arrayref('SELECT COUNT(*) AS count FROM cakes', callback {
+        return $_->[0];
+    });
+    
+    
+    # Another way to fetch and process a single row (hashref)
+    #
+    my $hashref = $dbh->processrow_hashref('SELECT COUNT(*) AS count FROM cakes');
+    my $count = $hashref->{count};
+    
+    # Or ...
+    #
+    my $count = $dbh->processrow_hashref('SELECT COUNT(*) AS count FROM cakes', callback {
+        return $_[0]{count};
+    });
+    
+    
+    # Fetching and processing multiple result sets...
+    #
+    my $array_of_array_refs = $dbh->processall_arrayref($statement, \%opt_attr, @opt_bindings, @opt_callbacks);
+    my @array_of_array_refs = $dbh->processall_arrayref($statement, \%opt_attr, @opt_bindings, @opt_callbacks);
+    my $array_of_hash_refs = $dbh->processall_hashref($statement, \%opt_attr, @opt_bindings, @opt_callbacks);
+    my @array_of_hash_refs = $dbh->processall_hashref($statement, \%opt_attr, @opt_bindings, @opt_callbacks);
+    my $array_of_array_refs = $sth->processall_arrayref(@opt_callbacks);
+    my @array_of_array_refs = $sth->processall_arrayref(@opt_callbacks);
+    my $array_of_hash_refs = $sth->processall_hashref(@opt_callbacks);
+    my @array_of_hash_refs = $sth->processall_hashref(@opt_callbacks);
+    
+    
 =head1 DESCRIPTION
 
 This module subclasses the DBI to provide the developer with greater 
@@ -216,14 +278,16 @@ use 5.006;
 use strict;
 use warnings;
 use MRO::Compat 'c3';
-
-use DBI ();
+use Exporter ();
+use DBI      ();
 use namespace::clean;
-our $VERSION                 = '0.000001';
-our @ISA                     = 'DBI';
-our $DEFAULT_AUTO_BIND       = 1;
-our $DEFAULT_FETCHROW_METHOD = 'fetchrow_arrayref';
-our @DEFAULT_FETCHROW_ARGS   = ();
+use Params::Callbacks 'callback';
+
+our $VERSION           = '0.001000';
+our @ISA               = ( 'DBI', 'Exporter' );
+our %EXPORT_TAGS       = ( all => [qw(callback)] );
+our @EXPORT_OK         = @{ $EXPORT_TAGS{all} };
+our $DEFAULT_AUTO_BIND = 1;
 
 sub _dbix_set_err
 {
@@ -293,6 +357,7 @@ sub do
 sub processrow_arrayref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+
     unless ( ref($sth) )
     {
         my $attr;
@@ -300,6 +365,7 @@ sub processrow_arrayref
           if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
+
     if ( $sth->auto_bind() )
     {
         $sth->bind(@bind_values);
@@ -309,21 +375,25 @@ sub processrow_arrayref
     {
         $sth->execute(@bind_values);
     }
+
     my $result;
     $result = $sth->fetchrow_arrayref()
       unless $sth->err;
+
     if ($result)
     {
         local $_;
         $result = $callbacks->smart_transform( $_ = [@$result] )
           unless ( $sth->err );
     }
+
     return $result;
 }
 
 sub processrow_hashref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+
     unless ( ref($sth) )
     {
         my $attr;
@@ -331,6 +401,7 @@ sub processrow_hashref
           if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
+
     if ( $sth->auto_bind() )
     {
         $sth->bind(@bind_values);
@@ -340,21 +411,25 @@ sub processrow_hashref
     {
         $sth->execute(@bind_values);
     }
+
     my $result;
     $result = $sth->fetchrow_hashref()
       unless $sth->err;
+
     if ($result)
     {
         local $_;
         $result = $callbacks->smart_transform( $_ = {%$result} )
           unless ( $sth->err );
     }
+
     return $result;
 }
 
 sub processall_arrayref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+
     unless ( ref($sth) )
     {
         my $attr;
@@ -362,6 +437,7 @@ sub processall_arrayref
           if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
+
     if ( $sth->auto_bind() )
     {
         $sth->bind(@bind_values);
@@ -371,15 +447,18 @@ sub processall_arrayref
     {
         $sth->execute(@bind_values);
     }
+
     my $result;
     $result = $sth->fetchall_arrayref()
       unless $sth->err;
+
     if ($result)
     {
         local $_;
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
+
     return $result
       unless defined $result;
     return wantarray ? @$result : $result;
@@ -388,6 +467,7 @@ sub processall_arrayref
 sub processall_hashref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+
     unless ( ref($sth) )
     {
         my $attr;
@@ -395,6 +475,7 @@ sub processall_hashref
           if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
+
     if ( $sth->auto_bind() )
     {
         $sth->bind(@bind_values);
@@ -404,15 +485,18 @@ sub processall_hashref
     {
         $sth->execute(@bind_values);
     }
+
     my $result;
     $result = $sth->fetchall_arrayref( {} )
       unless $sth->err;
+
     if ($result)
     {
         local $_;
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
+
     return $result
       unless defined $result;
     return wantarray ? @$result : $result;
@@ -423,8 +507,7 @@ package    # Hide from PAUSE
 
 BEGIN
 {
-    *_dbix_set_err           = \&DBIx::FlexibleBinding::_dbix_set_err;
-    *DEFAULT_FETCHROW_METHOD = \$DBIx::FlexibleBinding::DEFAULT_FETCHROW_METHOD;
+    *_dbix_set_err = \&DBIx::FlexibleBinding::_dbix_set_err;
 }
 
 use Params::Callbacks qw(callbacks);
@@ -436,10 +519,12 @@ our @ISA = 'DBI::st';
 sub _bind_array_ref
 {
     my ( $sth, $array_ref ) = @_;
+
     for ( my $n = 0 ; $n < @$array_ref ; $n++ )
     {
         $sth->bind_param( $n + 1, $array_ref->[$n] );
     }
+
     return $sth;
 }
 
@@ -459,6 +544,7 @@ sub bind
       unless @{ $sth->{private_param_order} };
 
     my $ref = ( @args == 1 ) && reftype( $args[0] );
+
     if ($ref)
     {
 
@@ -548,8 +634,8 @@ sub bind_param
 sub execute
 {
     my ( $sth, @bind_values ) = @_;
-
     my $rows;
+
     if ( $sth->auto_bind() )
     {
         $sth->bind(@bind_values);
@@ -567,12 +653,14 @@ sub processrow_arrayref
 {
     my ( $callbacks, $sth ) = &callbacks;
     my $result = $sth->fetchrow_arrayref();
+
     if ($result)
     {
         local $_;
         $result = $callbacks->smart_transform( $_ = [@$result] )
           unless ( $sth->err );
     }
+
     return $result;
 }
 
@@ -580,12 +668,14 @@ sub processrow_hashref
 {
     my ( $callbacks, $sth ) = &callbacks;
     my $result = $sth->fetchrow_hashref();
+
     if ($result)
     {
         local $_;
         $result = $callbacks->smart_transform( $_ = {%$result} )
           unless ( $sth->err );
     }
+
     return $result;
 }
 
@@ -593,12 +683,14 @@ sub processall_arrayref
 {
     my ( $callbacks, $sth ) = &callbacks;
     my $result = $sth->fetchall_arrayref();
+
     if ($result)
     {
         local $_;
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
+
     return $result
       unless defined $result;
     return wantarray ? @$result : $result;
@@ -608,12 +700,14 @@ sub processall_hashref
 {
     my ( $callbacks, $sth ) = &callbacks;
     my $result = $sth->fetchall_arrayref( {} );
+
     if ($result)
     {
         local $_;
         $result = [ map { $callbacks->transform($_) } @$result ]
           unless ( $sth->err );
     }
+
     return $result
       unless defined $result;
     return wantarray ? @$result : $result;
@@ -621,17 +715,26 @@ sub processall_hashref
 
 1;
 
-__END__
-
-=head1 METHODS
-
-=head2 function1
-
-=head2 function2
-
 =head1 EXPORTED SUBROUTINES
 
-Nothing is exported.
+=over 2
+
+=item B<callback>
+
+A simple piece of syntactic sugar that announces a callback. The code
+reference it precedes is blessed as a C<Params::Callbacks::Callback>
+object, disambiguating it from unblessed subs that are being passed as 
+standard arguments.
+
+Multiple callbacks may be chained together with or without comma 
+separators: 
+
+    callback { ... }, callback { ... }, callback { ... }    # Valid
+    callback { ... }  callback { ... }  callback { ... }    # Valid, too!
+    
+=back
+
+=cut
 
 =head1 AUTHOR
 
