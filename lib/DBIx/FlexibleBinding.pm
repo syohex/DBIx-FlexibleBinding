@@ -296,10 +296,8 @@ sub processrow_arrayref
     unless ( ref($sth) )
     {
         my $attr;
-        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
-        {
-            $attr = shift(@bind_values);
-        }
+        $attr = shift(@bind_values)
+          if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -329,10 +327,8 @@ sub processrow_hashref
     unless ( ref($sth) )
     {
         my $attr;
-        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
-        {
-            $attr = shift(@bind_values);
-        }
+        $attr = shift(@bind_values)
+          if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -362,10 +358,8 @@ sub processall_arrayref
     unless ( ref($sth) )
     {
         my $attr;
-        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
-        {
-            $attr = shift(@bind_values);
-        }
+        $attr = shift(@bind_values)
+          if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
@@ -397,10 +391,8 @@ sub processall_hashref
     unless ( ref($sth) )
     {
         my $attr;
-        if ( ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH' )
-        {
-            $attr = shift(@bind_values);
-        }
+        $attr = shift(@bind_values)
+          if ref( $bind_values[0] ) && ref( $bind_values[0] ) eq 'HASH';
         $sth = $dbh->prepare( $sth, $attr );
     }
     if ( $sth->auto_bind() )
