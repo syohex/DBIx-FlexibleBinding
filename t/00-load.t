@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Params::Callbacks qw(callback);
-use JSON ();
+use JSON;
 use Test::More;
 
 $Data::Dumper::Terse  = 1;
@@ -44,7 +44,7 @@ SKIP:
       or die "Unable to open ./mapsolarsystems test data";
     my $json_test_data = do { local $/ = <$json_test_data_fh> };
     close $json_test_data_fh;
-    my $test_data = JSON::decode_json($json_test_data);
+    my $test_data = decode_json($json_test_data);
     my $create    = << 'EOF';
 CREATE TABLE mapsolarsystems (
   regionID INT(11) DEFAULT NULL,
@@ -415,8 +415,235 @@ EOF
                 is_deeply( $result, [7929], 'processall_hashref (dbh)' );
             }
 
-            # Now some slightly funkier tests
+            # Now some slightly funkier tests...
+
+            {
+                my $result;
+                my @result;
+                my $sql;
+                my $count;
+                my $expect;
+
+                diag "";
+                diag "Using positional placeholders, fetch the names and ";
+                diag "security ratings of regional systems whose security";
+                diag "rating is 1.0 or more. We're expecting 8 tuples in ";
+                diag "the result set. ";
+                diag "";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = ? AND security >= ?';
+                $expect = [
+                            [ 'Kisogo',      '1' ],
+                            [ 'New Caldari', '1' ],
+                            [ 'Amarr',       '1' ],
+                            [ 'Bourynes',    '1' ],
+                            [ 'Ryddinjorn',  '1' ],
+                            [ 'Luminaire',   '1' ],
+                            [ 'Duripant',    '1' ],
+                            [ 'Yulai',       '1' ]
+                ];
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, 1, 1.0, callback
+                    {
+                        my $row = $_;
+                        diag sprintf "%2d. %s", ++$count, encode_json($row);
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag ":NUMBER placeholder scheme while presenting bind";
+                diag "variables as a simple list.";
+                $sql   = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = :1 AND security >= :2';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, 1, 1.0, callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag ":NUMBER placeholder scheme while presenting bind";
+                diag "variables as an anonymous list.";
+                $sql   = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = :1 AND security >= :2';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, [ 1, 1.0 ], callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag "?NUMBER placeholder scheme while presenting bind";
+                diag "variables as a simple list.";
+                $sql   = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = ?1 AND security >= ?2';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, 1, 1.0, callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag "?NUMBER placeholder scheme while presenting bind";
+                diag "variables as an anonymous list.";
+                $sql   = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = ?1 AND security >= ?2';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, [ 1, 1.0 ], callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag ":NAME placeholder scheme while presenting bind";
+                diag "variables as a simple list.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = :regional AND security >= :security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql,
+                    regional => 1,
+                    security => 1.0,
+                    callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag ":NAME placeholder scheme while presenting bind";
+                diag "variables as an anonymous list.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = :regional AND security >= :security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, [ regional => 1, security => 1.0 ], callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag ":NAME placeholder scheme while presenting bind";
+                diag "variables as an anonymous hash.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = :regional AND security >= :security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, {}, { regional => 1, security => 1.0 }, callback    # Extra hashref needed for statement
+                    {                                                         # attribute when presenting bind values as
+                        my $row = $_;                                         # a hashref (why we have the square bracket
+                        ++$count;                                             # option).
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );                                  # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );                      # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag "\@NAME placeholder scheme while presenting bind";
+                diag "variables as a simple list.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = @regional AND security >= @security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql,
+                    '@regional' => 1,
+                    '@security' => 1.0,
+                    callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag "\@NAME placeholder scheme while presenting bind";
+                diag "variables as an anonymous list.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = @regional AND security >= @security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, [ '@regional' => 1, '@security' => 1.0 ], callback
+                    {
+                        my $row = $_;
+                        ++$count;
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );    # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );    # Good result!
+
+                diag "";
+                diag "Perform the same checks again, this time using the ";
+                diag "\@NAME placeholder scheme while presenting bind";
+                diag "variables as an anonymous hash.";
+                $sql = 'SELECT solarSystemName, security FROM mapsolarsystems WHERE regional = @regional AND security >= @security';
+                $count = 0;
+                $result = $dbh->processall_arrayref(
+                    $sql, {}, { '@regional' => 1, '@security' => 1.0 }, callback    # Extra hashref needed for statement
+                    {                                                               # attribute when presenting bind values as
+                        my $row = $_;                                               # a hashref (why we have the square bracket
+                        ++$count;                                                   # option).
+                        return $row;
+                    }
+                );
+                diag "";
+                is( $count, 8, 'callback' );                                        # Callback was called 8 times
+                is_deeply( $result, $expect, 'result' );                            # Good result!
+            }
+
             $dbh->disconnect();
+
+            last;
         }
     }
 }
