@@ -146,7 +146,7 @@ EOF
                 while (@test_data)
                 {
                     $count++;
-                    if ( $count > 881 )
+                    if ( $count > 440 )
                     {
                         $count -= 1;
                         last;
@@ -155,7 +155,21 @@ EOF
                     $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($positional_placeholders)", undef, @$row );
                     last unless $rv == 1;
                 }
-                is( $count, 881, "insert ? ( VALUES )" );    # do/INSERTs successful using positionals and list
+                is( $count, 440, "insert ? ( VALUES )" );    # do/INSERTs successful using positionals and list
+
+                while (@test_data)
+                {
+                    $count++;
+                    if ( $count > 881 )
+                    {
+                        $count -= 1;
+                        last;
+                    }
+                    my $row = shift(@test_data);
+                    $rv = $dbh->do( "INSERT INTO mapsolarsystems ($columns) VALUES ($positional_placeholders)", undef, $row );
+                    last unless $rv == 1;
+                }
+                is( $count, 881, "insert ? [ VALUES ]" );    # do/INSERTs successful using positionals and list
 
                 while (@test_data)
                 {
@@ -643,7 +657,19 @@ EOF
 
             $dbh->disconnect();
 
-            last;
+            if ( $driver eq 'CSV' )
+            {
+                unlink './mapsolarsystems';
+            }
+            elsif ( $driver eq 'SQLite' )
+            {
+                unlink './test.db';
+            }
+            else
+            {
+                ; # No physical files to clean up
+            }
+
         }
     }
 }

@@ -283,7 +283,7 @@ use DBI      ();
 use namespace::clean;
 use Params::Callbacks 'callback';
 
-our $VERSION           = '0.001000';
+our $VERSION           = '0.001001';
 our @ISA               = ( 'DBI', 'Exporter' );
 our %EXPORT_TAGS       = ( all => [qw(callback)] );
 our @EXPORT_OK         = @{ $EXPORT_TAGS{all} };
@@ -643,7 +643,14 @@ sub execute
     }
     else
     {
-        $rows = $sth->SUPER::execute(@bind_values);
+        if ( @bind_values == 1 && ref( $bind_values[0] ) && reftype( $bind_values[0] ) eq 'ARRAY' )
+        {
+            $rows = $sth->SUPER::execute( @{ $bind_values[0] } );
+        }
+        else
+        {
+            $rows = $sth->SUPER::execute(@bind_values);
+        }
     }
 
     return ( $rows == 0 ) ? '0E0' : $rows;
