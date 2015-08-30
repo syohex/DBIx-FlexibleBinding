@@ -290,59 +290,123 @@ sub do
     return $sth->execute(@bind_values);
 }
 
-sub execute_then_fetch_rows
+sub processrow_arrayref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
-
     unless ( ref($sth) )
     {
         my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
         $sth = $dbh->prepare( $sth, $attr );
     }
-
-    my $rows;
     if ( $sth->auto_bind() )
     {
-        $sth->_bind(@bind_values);
-        $rows = $sth->execute();
+        $sth->bind(@bind_values);
+        $sth->execute();
     }
     else
     {
-        $rows = $sth->execute(@bind_values);
+        $sth->execute(@bind_values);
     }
-
-    return unless $rows > 0;
-
-    return $sth->fetch_rows(@$callbacks);
+    my $result;
+    $result = $sth->fetchrow_arrayref()
+      unless $sth->err;
+    if ($result)
+    {
+        local $_;
+        $result = $callbacks->smart_transform( $_ = [@$result] )
+          unless ( $sth->err );
+    }
+    return $result;
 }
 
-sub execute_then_fetch_record
+sub processrow_hashref
 {
     my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
-
     unless ( ref($sth) )
     {
         my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
         $sth = $dbh->prepare( $sth, $attr );
     }
-
-    my $rows;
     if ( $sth->auto_bind() )
     {
-        $sth->_bind(@bind_values);
-        $rows = $sth->execute();
+        $sth->bind(@bind_values);
+        $sth->execute();
     }
     else
     {
-        $rows = $sth->execute(@bind_values);
+        $sth->execute(@bind_values);
     }
-
-    return unless $rows > 0;
-
-    return $sth->fetch_record(@$callbacks);
+    my $result;
+    $result = $sth->fetchrow_hashref()
+      unless $sth->err;
+    if ($result)
+    {
+        local $_;
+        $result = $callbacks->smart_transform( $_ = {%$result} )
+          unless ( $sth->err );
+    }
+    return $result;
 }
 
-package    # Hide from PAUSE
+sub processall_arrayref
+{
+    my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+    unless ( ref($sth) )
+    {
+        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        $sth = $dbh->prepare( $sth, $attr );
+    }
+    if ( $sth->auto_bind() )
+    {
+        $sth->bind(@bind_values);
+        $sth->execute();
+    }
+    else
+    {
+        $sth->execute(@bind_values);
+    }
+    my $result;
+    $result = $sth->fetchall_arrayref()
+      unless $sth->err;
+    if ($result)
+    {
+        local $_;
+        $result = [ map { $callbacks->transform($_) } @$result ]
+          unless ( $sth->err );
+    }
+    return $result;
+}
+
+sub processall_hashref
+{
+    my ( $callbacks, $dbh, $sth, @bind_values ) = &callbacks;
+    unless ( ref($sth) )
+    {
+        my $attr = ref( $bind_values[0] ) ? shift(@bind_values) : undef;
+        $sth = $dbh->prepare( $sth, $attr );
+    }
+    if ( $sth->auto_bind() )
+    {
+        $sth->bind(@bind_values);
+        $sth->execute();
+    }
+    else
+    {
+        $sth->execute(@bind_values);
+    }
+    my $result;
+    $result = $sth->fetchall_arrayref( {} )
+      unless $sth->err;
+    if ($result)
+    {
+        local $_;
+        $result = [ map { $callbacks->transform($_) } @$result ]
+          unless ( $sth->err );
+    }
+    return $result;
+}
+
+package                    # Hide from PAUSE
   DBIx::FlexibleBinding::st;
 
 BEGIN
@@ -374,7 +438,7 @@ sub _bind_hash_ref
     return $sth;
 }
 
-sub _bind
+sub bind
 {
     my ( $sth, @args ) = @_;
     return $sth unless @args;
@@ -476,7 +540,7 @@ sub execute
     my $rows;
     if ( $sth->auto_bind() )
     {
-        $sth->_bind(@bind_values);
+        $sth->bind(@bind_values);
         $rows = $sth->SUPER::execute();
     }
     else
@@ -487,89 +551,56 @@ sub execute
     return ( $rows == 0 ) ? '0E0' : $rows;
 }
 
-sub fetch_next_row
+sub processrow_arrayref
 {
-    my ( $callbacks, $sth, @args ) = &callbacks;
-    my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args);
-    local $_;
-    if ($row)
+    my ( $callbacks, $sth ) = &callbacks;
+    my $result = $sth->fetchrow_arrayref();
+    if ($result)
     {
-        $row = $callbacks->smart_transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
+        local $_;
+        $result = $callbacks->smart_transform( $_ = [@$result] )
+          unless ( $sth->err );
     }
-    return $row;
+    return $result;
 }
 
-sub fetch_only_row
+sub processrow_hashref
 {
-    my ( $callbacks, $sth, @args ) = &callbacks;
-    my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args);
-    local $_;
-    if ($row)
+    my ( $callbacks, $sth ) = &callbacks;
+    my $result = $sth->fetchrow_hashref();
+    if ($result)
     {
-        $row = $callbacks->smart_transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
+        local $_;
+        $result = $callbacks->smart_transform( $_ = {%$result} )
+          unless ( $sth->err );
     }
-    $sth->finish();
-    return $row;
+    return $result;
 }
 
-sub fetch_rows
+sub processall_arrayref
 {
-    my ( $callbacks, $sth, @args ) = &callbacks;
-    my @rows;
-    local $_;
-    while ( my $row = $sth->$DEFAULT_FETCHROW_METHOD(@args) )
+    my ( $callbacks, $sth ) = &callbacks;
+    my $result = $sth->fetchall_arrayref();
+    if ($result)
     {
-        push @rows, $callbacks->transform( $_ = ( ref($row) eq 'ARRAY' ) ? [@$row] : $row );
+        local $_;
+        $result = [ map { $callbacks->transform($_) } @$result ]
+          unless ( $sth->err );
     }
-    return wantarray ? @rows : \@rows;
+    return $result;
 }
 
-sub fetch_all
+sub processall_hashref
 {
-    my ( $callbacks, $sth, @args ) = &callbacks;
-    local $_;
-    my @rows = map { $callbacks->transform($_) } @{ $sth->fetchall_arrayref(@args) };
-    return wantarray ? @rows : \@rows;
-}
-
-sub execute_then_fetch_rows
-{
-    my ( $callbacks, $sth, @bind_values ) = &callbacks;
-
-    my $rows;
-    if ( $sth->auto_bind() )
+    my ( $callbacks, $sth ) = &callbacks;
+    my $result = $sth->fetchall_arrayref( {} );
+    if ($result)
     {
-        $sth->_bind(@bind_values);
-        $rows = $sth->execute();
+        local $_;
+        $result = [ map { $callbacks->transform($_) } @$result ]
+          unless ( $sth->err );
     }
-    else
-    {
-        $rows = $sth->execute(@bind_values);
-    }
-
-    return unless $rows > 0;
-
-    return $sth->fetch_rows(@$callbacks);
-}
-
-sub execute_then_fetch_record
-{
-    my ( $callbacks, $sth, @bind_values ) = &callbacks;
-
-    my $rows;
-    if ( $sth->auto_bind() )
-    {
-        $sth->_bind(@bind_values);
-        $rows = $sth->execute();
-    }
-    else
-    {
-        $rows = $sth->execute(@bind_values);
-    }
-
-    return unless $rows > 0;
-
-    return $sth->fetch_record(@$callbacks);
+    return $result;
 }
 
 1;
